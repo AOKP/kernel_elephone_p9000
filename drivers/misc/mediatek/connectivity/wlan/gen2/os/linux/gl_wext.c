@@ -3636,7 +3636,8 @@ int wext_support_ioctl(IN struct net_device *prDev, IN struct ifreq *prIfReq, IN
 		}
 
 		if (u4ExtraSize != IW_ESSID_MAX_SIZE && u4ExtraSize != IW_ESSID_MAX_SIZE + 1) {
-			DBGLOG(REQ, ERROR, "[wifi] iwr->u.essid.length:%d too small\n", u4ExtraSize);
+			DBGLOG(INIT, ERROR, "[wifi] iwr->u.essid.length: %d error\n", u4ExtraSize);
+
 			ret = -E2BIG;	/* let caller try larger buffer */
 			break;
 		}
