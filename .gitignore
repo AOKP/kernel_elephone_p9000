@@ -2610,6 +2610,7 @@ drivers/power/.power_supply_leds.o.cmd
 drivers/power/.power_supply_sysfs.o.cmd
 drivers/power/built-in.o
 drivers/power/mediatek/.built-in.o.cmd
+drivers/power/mediatek/.switch_charging.o.cmd
 drivers/power/mediatek/battery_common_fg_20.o
 drivers/power/mediatek/battery_meter_fg_20.o
 drivers/power/mediatek/built-in.o
