@@ -1,7 +1,9 @@
 #!/bin/bash
+rm DarkSense
 make clean && make mrproper
 export CROSS_COMPILE=~/android/android-ndk-r12b/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-
 export ARCH=arm64
 export KERNEL_CONFIG=/arch/arm64/configs/DarkSense_defconfig
 make -j8 DarkSense_defconfig
 make -j8
+cp arch/arm64/boot/Image.gz-dtb DarkSense
