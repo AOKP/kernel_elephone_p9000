@@ -387,6 +387,7 @@ crypto/testmgr.o
 crypto/twofish_common.o
 crypto/twofish_generic.o
 crypto/xcbc.o
+DarkSense
 drivers/.built-in.o.cmd
 drivers/amba/.built-in.o.cmd
 drivers/amba/.bus.o.cmd
