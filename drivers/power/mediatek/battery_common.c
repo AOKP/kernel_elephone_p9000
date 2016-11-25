@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2015 MediaTek Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
-
 /*****************************************************************************
  *
  * Filename:
@@ -89,7 +76,7 @@
 
 
 #if defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)
-#include <mt-plat/diso.h>
+#include <mach/diso.h>
 #endif
 
 #if defined(CONFIG_MTK_PUMP_EXPRESS_PLUS_SUPPORT)
@@ -1894,7 +1881,7 @@ static void battery_update(struct battery_data *bat_data)
 		}
 	}
 
-	battery_log(BAT_LOG_FULL, "UI_SOC=(%d), resetBatteryMeter=(%d)\n",
+	battery_log(BAT_LOG_CRTI, "UI_SOC=(%d), resetBatteryMeter=(%d)\n",
 		    BMT_status.UI_SOC, resetBatteryMeter);
 
 #if !defined(CUST_CAPACITY_OCV2CV_TRANSFORM)
@@ -1963,7 +1950,6 @@ void update_charger_info(int wireless_state)
 
 static void wireless_update(struct wireless_data *wireless_data)
 {
-	static int wireless_status = -1;
 	struct power_supply *wireless_psy = &wireless_data->psy;
 
 	if (BMT_status.charger_exist == KAL_TRUE || g_wireless_state) {
@@ -1977,15 +1963,11 @@ static void wireless_update(struct wireless_data *wireless_data)
 		wireless_data->WIRELESS_ONLINE = 0;
 	}
 
-	if (wireless_status != wireless_data->WIRELESS_ONLINE) {
-		wireless_status = wireless_data->WIRELESS_ONLINE;
-		power_supply_changed(wireless_psy);
-	}
+	power_supply_changed(wireless_psy);
 }
 
 static void ac_update(struct ac_data *ac_data)
 {
-	static int ac_status = -1;
 	struct power_supply *ac_psy = &ac_data->psy;
 
 	if (BMT_status.charger_exist == KAL_TRUE) {
@@ -2012,15 +1994,11 @@ static void ac_update(struct ac_data *ac_data)
 		ac_data->AC_ONLINE = 0;
 	}
 
-	if (ac_status != ac_data->AC_ONLINE) {
-		ac_status = ac_data->AC_ONLINE;
-		power_supply_changed(ac_psy);
-	}
+	power_supply_changed(ac_psy);
 }
 
 static void usb_update(struct usb_data *usb_data)
 {
-	static int usb_status = -1;
 	struct power_supply *usb_psy = &usb_data->psy;
 
 	if (BMT_status.charger_exist == KAL_TRUE) {
@@ -2035,10 +2013,7 @@ static void usb_update(struct usb_data *usb_data)
 		usb_data->USB_ONLINE = 0;
 	}
 
-	if (usb_status != usb_data->USB_ONLINE) {
-		usb_status = usb_data->USB_ONLINE;
-		power_supply_changed(usb_psy);
-	}
+	power_supply_changed(usb_psy);
 }
 
 #endif
@@ -2750,7 +2725,7 @@ static void mt_battery_update_status(void)
 #else
 	{
 		if (skip_battery_update == KAL_FALSE) {
-			battery_log(BAT_LOG_FULL, "mt_battery_update_status.\n");
+			battery_log(BAT_LOG_CRTI, "mt_battery_update_status.\n");
 			usb_update(&usb_main);
 			ac_update(&ac_main);
 			wireless_update(&wireless_main);
@@ -2869,7 +2844,7 @@ static void mt_battery_charger_detect_check(void)
 		battery_charging_control(CHARGING_CMD_SET_CHRIND_CK_PDN, &pwr);
 #endif
 
-		battery_log(BAT_LOG_FULL, "[BAT_thread]Cable in, CHR_Type_num=%d\r\n",
+		battery_log(BAT_LOG_CRTI, "[BAT_thread]Cable in, CHR_Type_num=%d\r\n",
 			    BMT_status.charger_type);
 
 #if defined(CONFIG_MTK_PUMP_EXPRESS_PLUS_SUPPORT)
@@ -2919,7 +2894,7 @@ static void mt_battery_charger_detect_check(void)
 static void mt_kpoc_power_off_check(void)
 {
 #ifdef CONFIG_MTK_KERNEL_POWER_OFF_CHARGING
-	battery_log(BAT_LOG_FULL,
+	battery_log(BAT_LOG_CRTI,
 		    "[mt_kpoc_power_off_check] , chr_vol=%d, boot_mode=%d\r\n",
 		    BMT_status.charger_vol, g_platform_boot_mode);
 	if (g_platform_boot_mode == KERNEL_POWER_OFF_CHARGING_BOOT
@@ -3104,9 +3079,7 @@ int bat_thread_kthread(void *x)
 		battery_log(BAT_LOG_CRTI, "CDP, PASS\n");
 	}
 #endif
-#if defined(BATTERY_SW_INIT)
-		battery_charging_control(CHARGING_CMD_SW_INIT, NULL);
-#endif
+
 
 	/* Run on a process content */
 	while (1) {
@@ -4173,6 +4146,9 @@ static int battery_probe(struct platform_device *dev)
 	get_charging_control();
 
 	batt_init_cust_data();
+#if defined(BATTERY_SW_INIT)
+		battery_charging_control(CHARGING_CMD_SW_INIT, NULL);
+#endif
 
 
 	battery_charging_control(CHARGING_CMD_GET_PLATFORM_BOOT_MODE, &g_platform_boot_mode);
@@ -4337,11 +4313,12 @@ static int battery_probe(struct platform_device *dev)
 	g_bat_init_flag = KAL_TRUE;
 
 #if defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)
-	if ((g_vcdt_irq_delay_flag == KAL_TRUE) || (upmu_is_chr_det() == KAL_TRUE))
+	if (g_vcdt_irq_delay_flag == KAL_TRUE)
 		do_chrdet_int_task();
 #endif
 
 	return 0;
+
 }
 
 static void battery_timer_pause(void)
@@ -4426,12 +4403,6 @@ static int battery_remove(struct platform_device *dev)
 
 static void battery_shutdown(struct platform_device *dev)
 {
-#if defined(CONFIG_MTK_PUMP_EXPRESS_PLUS_SUPPORT)
-	CHR_CURRENT_ENUM input_current = CHARGE_CURRENT_70_00_MA;
-
-	battery_charging_control(CHARGING_CMD_SET_INPUT_CURRENT, &input_current);
-	battery_log(BAT_LOG_CRTI, "[PE+] Resetting TA adapter before shutdown\n");
-#endif
 	battery_log(BAT_LOG_CRTI, "******** battery driver shutdown!! ********\n");
 
 }
