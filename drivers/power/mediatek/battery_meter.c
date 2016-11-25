@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2015 MediaTek Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
-
 #include <linux/init.h>		/* For init/exit macros */
 #include <linux/module.h>	/* For MODULE_ marcros  */
 #include <linux/fs.h>
@@ -86,13 +73,6 @@ static unsigned int temperature_change = 1;
 #endif
 
 #if defined(CUST_CAPACITY_OCV2CV_TRANSFORM)
-#ifndef CV_CURRENT
-#define CV_CURRENT 6000 /* 600mA */
-#endif
-
-#ifndef STEP_OF_QMAX
-#define STEP_OF_QMAX 60
-#endif
 static signed int g_currentfactor = 100;
 static kal_bool g_USE_UI_SOC = KAL_TRUE;
 #if defined(CUST_SYSTEM_OFF_VOLTAGE)
@@ -497,12 +477,6 @@ int __batt_meter_init_cust_data_from_cust_header(void)
 	batt_meter_cust_data.close_poweroff_wakeup_period = CLOSE_POWEROFF_WAKEUP_PERIOD;
 #endif
 
-#if defined(IS_BATTERY_REMOVE_BY_PMIC)
-	batt_meter_cust_data.vbat_remove_detection = 1;
-#else	/* #if defined(IS_BATTERY_REMOVE_BY_PMIC) */
-	batt_meter_cust_data.vbat_remove_detection = 0;
-#endif	/* #if defined(IS_BATTERY_REMOVE_BY_PMIC) */
-
 	return 0;
 }
 
@@ -511,7 +485,6 @@ static void __batt_meter_parse_node(const struct device_node *np,
 				const char *node_srting, int *cust_val)
 {
 	u32 val;
-
 	if (of_property_read_u32(np, node_srting, &val) == 0) {
 		(*cust_val) = (int)val;
 		bm_print(BM_LOG_FULL, "Get %s: %d\n", node_srting, (*cust_val));
@@ -550,13 +523,6 @@ static void __batt_meter_parse_table(const struct device_node *np,
 		profile_p++;
 		if ((idx++) >= (saddles * 2))
 			break;
-	}
-
-	/* error handle */
-	if (0 == idx) {
-		battery_log(BAT_LOG_CRTI,
-			"[%s] cannot find %s in dts\n", __func__, node_srting);
-		return;
 	}
 
 	/* use last data to fill with the rest array
@@ -784,9 +750,6 @@ int __batt_meter_init_cust_data_from_dt(void)
 
 	__batt_meter_parse_node(np, "close_poweroff_wakeup_period",
 		&batt_meter_cust_data.close_poweroff_wakeup_period);
-
-	__batt_meter_parse_node(np, "vbat_remove_detection",
-		&batt_meter_cust_data.vbat_remove_detection);
 
 	of_node_put(np);
 
@@ -1788,9 +1751,7 @@ void fgauge_get_current_factor(void)
 		for (i = 0; i < TEMP_AVERAGE_SIZE; i++)
 			battCurrentBuffer[i] = inst_current;
 
-		/*set current_sum from inst_current*TEMP_AVERAGE_SIZE to CV_CURRENT*TEMP_AVERAGE_SIZE
-		to avoid SOC have a large jump at platform boot-up or dischager after charger at once*/
-		current_sum = CV_CURRENT * TEMP_AVERAGE_SIZE;
+		current_sum = inst_current * TEMP_AVERAGE_SIZE;
 		init_current = KAL_FALSE;
 	}
 
@@ -2017,8 +1978,7 @@ void dod_init(void)
 
 
 #if defined(IS_BATTERY_REMOVE_BY_PMIC)
-	if (is_battery_remove_pmic() == 0 && (g_rtc_fg_soc != 0)
-		&& batt_meter_cust_data.vbat_remove_detection) {
+	if (is_battery_remove_pmic() == 0 && (g_rtc_fg_soc != 0)) {
 		bm_print(BM_LOG_CRTI, "[FGADC]is_battery_remove()==0 , use rtc_fg_soc%d\n",
 			 g_rtc_fg_soc);
 		gFG_capacity_by_v = g_rtc_fg_soc;
@@ -2300,6 +2260,10 @@ void oam_run(void)
 	/* Reconstruct table if temp changed; */
 	fgauge_construct_table_by_temp();
 
+#if defined(CUST_CAPACITY_OCV2CV_TRANSFORM)
+	fgauge_get_current_factor();
+#endif
+
 	vol_bat = 15;		/* set avg times */
 	ret = battery_meter_ctrl(BATTERY_METER_CMD_GET_ADC_V_BAT_SENSE, &vol_bat);
 
@@ -2441,16 +2405,6 @@ void oam_run(void)
 
 	bm_print(BM_LOG_CRTI, "[oam_result_inf] %d, %d, %d, %d, %d, %d\n",
 		 oam_d_1, oam_d_2, oam_d_3, oam_d_4, oam_d_5, BMT_status.UI_SOC);
-
-	/* set gFG_current always positive */
-	if (oam_i_2 > 0)
-		gFG_current = oam_i_2;
-	else
-		gFG_current = -oam_i_2;
-
-#if defined(CUST_CAPACITY_OCV2CV_TRANSFORM)
-	fgauge_get_current_factor();
-#endif
 }
 
 /* ============================================================ // */
