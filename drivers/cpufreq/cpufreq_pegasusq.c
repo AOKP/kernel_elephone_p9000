@@ -398,7 +398,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			max_load_freq = load_freq;
 	}
 
-	cpufreq_notify_utilization(policy, max_load);
+//	cpufreq_notify_utilization(policy, max_load);
 
 	/* Check for frequency increase */
 	up_threshold = dbs_tuners_ins.up_threshold;
