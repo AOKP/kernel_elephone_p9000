@@ -1,6 +1,6 @@
 #!/bin/bash
-DEFCONFIG=DarkSense_defconfig
-KERNEL=DarkSense
+DEFCONFIG=lineage_p9000_defconfig
+KERNEL=lineage
 if [  -f $KERNEL ]; then
 	rm $KERNEL
 fi
