@@ -53,6 +53,9 @@ else
 	LINUX_COMPILE_HOST=$KBUILD_BUILD_HOST
 fi
 
+LINUX_COMPILE_BY="leskal-tribual"
+LINUX_COMPILE_HOST="open-source Kernel P9000"
+
 UTS_VERSION="#$VERSION"
 CONFIG_FLAGS=""
 if [ -n "$SMP" ] ; then CONFIG_FLAGS="SMP"; fi
